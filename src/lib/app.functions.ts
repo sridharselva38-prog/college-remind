@@ -8,6 +8,7 @@ import {
   summarizeFees,
   monthlyCollection,
   reminderStats,
+  nn,
   type FeeRow,
 } from "@/lib/app.server";
 import {
@@ -146,7 +147,7 @@ export const saveStudent = createServerFn({ method: "POST" })
     if (!scope.isSuper && !scope.isAdmin) throw new Error("Forbidden");
     if (!scope.collegeId && !scope.isSuper) throw new Error("No college assigned to your account.");
 
-    const payload = { ...data, college_id: scope.collegeId! };
+    const payload = nn({ ...data, college_id: scope.collegeId! }) as never;
     const { data: row, error } = data.id
       ? await supabase.from("students").update(payload).eq("id", data.id).select().single()
       : await supabase.from("students").insert(payload).select().single();
@@ -185,7 +186,7 @@ export const saveFeeRecord = createServerFn({ method: "POST" })
       .single();
     if (sErr) throw new Error(sErr.message);
 
-    const payload = { ...data, college_id: student.college_id };
+    const payload = nn({ ...data, college_id: student.college_id }) as never;
     const { data: row, error } = data.id
       ? await supabase.from("fee_records").update(payload).eq("id", data.id).select().single()
       : await supabase.from("fee_records").insert(payload).select().single();
@@ -257,8 +258,8 @@ export const saveCollege = createServerFn({ method: "POST" })
   .inputValidator((data: CollegeInput) => collegeSchema.parse(data))
   .handler(async ({ context, data }) => {
     const { data: row, error } = data.id
-      ? await context.supabase.from("colleges").update(data).eq("id", data.id).select().single()
-      : await context.supabase.from("colleges").insert(data).select().single();
+      ? await context.supabase.from("colleges").update(nn(data) as never).eq("id", data.id).select().single()
+      : await context.supabase.from("colleges").insert(nn(data) as never).select().single();
     if (error) throw new Error(error.message);
     return row;
   });
