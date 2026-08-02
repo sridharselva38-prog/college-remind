@@ -7,7 +7,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { listColleges, saveCollege } from "@/lib/app.functions";
-import { collegeSchema, type CollegeInput } from "@/lib/schemas";
+import { collegeSchema } from "@/lib/schemas";
+import type { z } from "zod";
+
+type CollegeInput = z.input<typeof collegeSchema>;
 import { DashboardShell } from "@/components/DashboardShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
