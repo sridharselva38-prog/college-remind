@@ -131,3 +131,12 @@ export function reminderStats(rows: { status: string; channel: string; sent_at: 
     })),
   };
 }
+
+/** Normalizes form payloads for Postgres: undefined and "" become null. */
+export function nn<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    out[k] = v === undefined || v === "" ? null : v;
+  }
+  return out;
+}
