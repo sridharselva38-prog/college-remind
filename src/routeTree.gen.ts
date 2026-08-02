@@ -13,9 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin.dashboard'
 import { Route as AuthenticatedAdminFeesRouteImport } from './routes/_authenticated/admin.fees'
 import { Route as AuthenticatedAdminStudentsRouteImport } from './routes/_authenticated/admin.students'
+import { Route as AuthenticatedStudentDashboardRouteImport } from './routes/_authenticated/student.dashboard'
+import { Route as AuthenticatedSuperAdminAccountsRouteImport } from './routes/_authenticated/super-admin.accounts'
+import { Route as AuthenticatedSuperAdminCollegesRouteImport } from './routes/_authenticated/super-admin.colleges'
 import { Route as AuthenticatedSuperAdminDashboardRouteImport } from './routes/_authenticated/super-admin.dashboard'
 
 const IndexRoute = IndexRouteImport.update({
@@ -37,6 +41,12 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminDashboardRoute =
   AuthenticatedAdminDashboardRouteImport.update({
     id: '/admin/dashboard',
@@ -54,6 +64,24 @@ const AuthenticatedAdminStudentsRoute =
     path: '/admin/students',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedStudentDashboardRoute =
+  AuthenticatedStudentDashboardRouteImport.update({
+    id: '/student/dashboard',
+    path: '/student/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSuperAdminAccountsRoute =
+  AuthenticatedSuperAdminAccountsRouteImport.update({
+    id: '/super-admin/accounts',
+    path: '/super-admin/accounts',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSuperAdminCollegesRoute =
+  AuthenticatedSuperAdminCollegesRouteImport.update({
+    id: '/super-admin/colleges',
+    path: '/super-admin/colleges',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSuperAdminDashboardRoute =
   AuthenticatedSuperAdminDashboardRouteImport.update({
     id: '/super-admin/dashboard',
@@ -65,18 +93,26 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/fees': typeof AuthenticatedAdminFeesRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
+  '/student/dashboard': typeof AuthenticatedStudentDashboardRoute
+  '/super-admin/accounts': typeof AuthenticatedSuperAdminAccountsRoute
+  '/super-admin/colleges': typeof AuthenticatedSuperAdminCollegesRoute
   '/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/fees': typeof AuthenticatedAdminFeesRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
+  '/student/dashboard': typeof AuthenticatedStudentDashboardRoute
+  '/super-admin/accounts': typeof AuthenticatedSuperAdminAccountsRoute
+  '/super-admin/colleges': typeof AuthenticatedSuperAdminCollegesRoute
   '/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
 }
 export interface FileRoutesById {
@@ -85,9 +121,13 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/admin/fees': typeof AuthenticatedAdminFeesRoute
   '/_authenticated/admin/students': typeof AuthenticatedAdminStudentsRoute
+  '/_authenticated/student/dashboard': typeof AuthenticatedStudentDashboardRoute
+  '/_authenticated/super-admin/accounts': typeof AuthenticatedSuperAdminAccountsRoute
+  '/_authenticated/super-admin/colleges': typeof AuthenticatedSuperAdminCollegesRoute
   '/_authenticated/super-admin/dashboard': typeof AuthenticatedSuperAdminDashboardRoute
 }
 export interface FileRouteTypes {
@@ -96,18 +136,26 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/home'
+    | '/notifications'
     | '/admin/dashboard'
     | '/admin/fees'
     | '/admin/students'
+    | '/student/dashboard'
+    | '/super-admin/accounts'
+    | '/super-admin/colleges'
     | '/super-admin/dashboard'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/home'
+    | '/notifications'
     | '/admin/dashboard'
     | '/admin/fees'
     | '/admin/students'
+    | '/student/dashboard'
+    | '/super-admin/accounts'
+    | '/super-admin/colleges'
     | '/super-admin/dashboard'
   id:
     | '__root__'
@@ -115,9 +163,13 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/home'
+    | '/_authenticated/notifications'
     | '/_authenticated/admin/dashboard'
     | '/_authenticated/admin/fees'
     | '/_authenticated/admin/students'
+    | '/_authenticated/student/dashboard'
+    | '/_authenticated/super-admin/accounts'
+    | '/_authenticated/super-admin/colleges'
     | '/_authenticated/super-admin/dashboard'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/dashboard': {
       id: '/_authenticated/admin/dashboard'
       path: '/admin/dashboard'
@@ -178,6 +237,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminStudentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/student/dashboard': {
+      id: '/_authenticated/student/dashboard'
+      path: '/student/dashboard'
+      fullPath: '/student/dashboard'
+      preLoaderRoute: typeof AuthenticatedStudentDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/super-admin/accounts': {
+      id: '/_authenticated/super-admin/accounts'
+      path: '/super-admin/accounts'
+      fullPath: '/super-admin/accounts'
+      preLoaderRoute: typeof AuthenticatedSuperAdminAccountsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/super-admin/colleges': {
+      id: '/_authenticated/super-admin/colleges'
+      path: '/super-admin/colleges'
+      fullPath: '/super-admin/colleges'
+      preLoaderRoute: typeof AuthenticatedSuperAdminCollegesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/super-admin/dashboard': {
       id: '/_authenticated/super-admin/dashboard'
       path: '/super-admin/dashboard'
@@ -190,17 +270,25 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
   AuthenticatedAdminFeesRoute: typeof AuthenticatedAdminFeesRoute
   AuthenticatedAdminStudentsRoute: typeof AuthenticatedAdminStudentsRoute
+  AuthenticatedStudentDashboardRoute: typeof AuthenticatedStudentDashboardRoute
+  AuthenticatedSuperAdminAccountsRoute: typeof AuthenticatedSuperAdminAccountsRoute
+  AuthenticatedSuperAdminCollegesRoute: typeof AuthenticatedSuperAdminCollegesRoute
   AuthenticatedSuperAdminDashboardRoute: typeof AuthenticatedSuperAdminDashboardRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
   AuthenticatedAdminFeesRoute: AuthenticatedAdminFeesRoute,
   AuthenticatedAdminStudentsRoute: AuthenticatedAdminStudentsRoute,
+  AuthenticatedStudentDashboardRoute: AuthenticatedStudentDashboardRoute,
+  AuthenticatedSuperAdminAccountsRoute: AuthenticatedSuperAdminAccountsRoute,
+  AuthenticatedSuperAdminCollegesRoute: AuthenticatedSuperAdminCollegesRoute,
   AuthenticatedSuperAdminDashboardRoute: AuthenticatedSuperAdminDashboardRoute,
 }
 
