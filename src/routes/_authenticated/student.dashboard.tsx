@@ -98,7 +98,7 @@ function StudentDashboard() {
           ) : (
             data.reminders.map((r) => (
               <div key={r.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="capitalize text-muted-foreground">{r.channel} · {r.reminder_type}</span>
+                <span className="capitalize text-muted-foreground">{r.channel} · {r.stage}</span>
                 <span className="text-xs text-muted-foreground">{new Date(r.sent_at).toLocaleString()}</span>
               </div>
             ))
