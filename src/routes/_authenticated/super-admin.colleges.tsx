@@ -44,7 +44,7 @@ function CollegesPage() {
   const form = useForm<CollegeInput>({ resolver: zodResolver(collegeSchema), defaultValues: EMPTY });
 
   const mutation = useMutation({
-    mutationFn: (v: CollegeInput) => save({ data: v }),
+    mutationFn: (v: CollegeInput) => save({ data: collegeSchema.parse(v) }),
     onSuccess: () => {
       toast.success("College saved");
       setOpen(false);
