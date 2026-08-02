@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin.dashboard'
+import { Route as AuthenticatedAdminFeesRouteImport } from './routes/_authenticated/admin.fees'
 import { Route as AuthenticatedAdminStudentsRouteImport } from './routes/_authenticated/admin.students'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const AuthenticatedAdminDashboardRoute =
     path: '/admin/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminFeesRoute = AuthenticatedAdminFeesRouteImport.update({
+  id: '/admin/fees',
+  path: '/admin/fees',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminStudentsRoute =
   AuthenticatedAdminStudentsRouteImport.update({
     id: '/admin/students',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/home': typeof AuthenticatedHomeRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/admin/fees': typeof AuthenticatedAdminFeesRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
 }
 export interface FileRoutesByTo {
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/home': typeof AuthenticatedHomeRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/admin/fees': typeof AuthenticatedAdminFeesRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
 }
 export interface FileRoutesById {
@@ -69,13 +77,26 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
+  '/_authenticated/admin/fees': typeof AuthenticatedAdminFeesRoute
   '/_authenticated/admin/students': typeof AuthenticatedAdminStudentsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/home' | '/admin/dashboard' | '/admin/students'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/home'
+    | '/admin/dashboard'
+    | '/admin/fees'
+    | '/admin/students'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/home' | '/admin/dashboard' | '/admin/students'
+  to:
+    | '/'
+    | '/auth'
+    | '/home'
+    | '/admin/dashboard'
+    | '/admin/fees'
+    | '/admin/students'
   id:
     | '__root__'
     | '/'
@@ -83,6 +104,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/home'
     | '/_authenticated/admin/dashboard'
+    | '/_authenticated/admin/fees'
     | '/_authenticated/admin/students'
   fileRoutesById: FileRoutesById
 }
@@ -129,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/fees': {
+      id: '/_authenticated/admin/fees'
+      path: '/admin/fees'
+      fullPath: '/admin/fees'
+      preLoaderRoute: typeof AuthenticatedAdminFeesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/students': {
       id: '/_authenticated/admin/students'
       path: '/admin/students'
@@ -142,12 +171,14 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
+  AuthenticatedAdminFeesRoute: typeof AuthenticatedAdminFeesRoute
   AuthenticatedAdminStudentsRoute: typeof AuthenticatedAdminStudentsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
+  AuthenticatedAdminFeesRoute: AuthenticatedAdminFeesRoute,
   AuthenticatedAdminStudentsRoute: AuthenticatedAdminStudentsRoute,
 }
 
