@@ -48,14 +48,14 @@ function AdminDashboard() {
   });
 
   const f = data?.fees;
-  const rate = f && f.totalExpected > 0 ? Math.round((f.totalCollected / f.totalExpected) * 100) : 0;
+  const rate = f && f.totalFee > 0 ? Math.round((f.collected / f.totalFee) * 100) : 0;
 
   const statusData = f
     ? [
         { name: "Paid", value: f.paidCount },
-        { name: "Partial", value: f.partialCount },
+        { name: "Partial", value: f.recordCount - f.paidCount - f.overdueCount },
         { name: "Overdue", value: f.overdueCount },
-        { name: "Pending", value: f.pendingCount },
+        { name: "Upcoming", value: f.upcomingCount },
       ].filter((d) => d.value > 0)
     : [];
 
@@ -75,22 +75,22 @@ function AdminDashboard() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label="Total collected"
-              value={inr(f?.totalCollected)}
-              hint={`of ${inr(f?.totalExpected)} expected`}
+              value={inr(f?.collected)}
+              hint={`of ${inr(f?.totalFee)} expected`}
               icon={<IndianRupee className="size-[18px]" />}
               tone="success"
             />
             <StatCard
               label="Pending balance"
-              value={inr(f?.totalPending)}
-              hint={`${f?.pendingCount ?? 0} records awaiting payment`}
+              value={inr(f?.pending)}
+              hint={`${f?.upcomingCount ?? 0} records awaiting payment`}
               icon={<Clock className="size-[18px]" />}
               tone="warning"
             />
             <StatCard
               label="Overdue records"
               value={f?.overdueCount ?? 0}
-              hint={inr(f?.overdueAmount) + " past due date"}
+              hint={inr(f?.pending) + " past due date"}
               icon={<AlertTriangle className="size-[18px]" />}
               tone="danger"
             />
@@ -172,7 +172,7 @@ function AdminDashboard() {
             />
             <StatCard
               label="Delivered"
-              value={data?.reminders.delivered ?? 0}
+              value={data?.reminders.sent ?? 0}
               hint={`${data?.reminders.successRate ?? 0}% success rate`}
               icon={<CheckCircle2 className="size-[18px]" />}
               tone="success"
