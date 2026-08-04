@@ -20,8 +20,12 @@ export const Route = createFileRoute("/_authenticated/admin/fees")({
   head: () => ({
     meta: [
       { title: "Fee Records — FeeSync AI" },
-      { name: "description", content: "Track fee totals, payments, balances and due dates." },
+      { name: "description", content: "Track every student fee record: total payable, amounts paid, outstanding balance, due dates and payment status in one place." },
+      { property: "og:title", content: "Fee Records — FeeSync AI" },
+      { property: "og:description", content: "Track fee totals, payments, outstanding balances and due dates for every student." },
+      { property: "og:url", content: "/admin/fees" },
     ],
+    links: [{ rel: "canonical", href: "/admin/fees" }],
   }),
   component: FeesPage,
 });

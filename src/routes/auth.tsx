@@ -25,13 +25,12 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — FeeSync AI" },
-      {
-        name: "description",
-        content: "Sign in to FeeSync AI with Google or email to manage college fees and reminders.",
-      },
+      { name: "description", content: "Sign in to FeeSync AI with Google or email to manage college fee records, balances and automated payment reminders." },
       { property: "og:title", content: "Sign in — FeeSync AI" },
-      { property: "og:description", content: "Access your FeeSync AI fee reminder dashboard." },
+      { property: "og:description", content: "Access your FeeSync AI fee reminder dashboard for students, parents and college admins." },
+      { property: "og:url", content: "/auth" },
     ],
+    links: [{ rel: "canonical", href: "/auth" }],
   }),
   component: AuthPage,
 });

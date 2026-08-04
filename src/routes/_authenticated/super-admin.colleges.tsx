@@ -23,8 +23,12 @@ export const Route = createFileRoute("/_authenticated/super-admin/colleges")({
   head: () => ({
     meta: [
       { title: "Colleges — FeeSync AI" },
-      { name: "description", content: "Create and manage colleges on the FeeSync AI platform." },
+      { name: "description", content: "Create and manage colleges on the FeeSync AI platform, including contact details, payment links and reminder languages." },
+      { property: "og:title", content: "Colleges — FeeSync AI" },
+      { property: "og:description", content: "Create and manage colleges, payment links and reminder languages on FeeSync AI." },
+      { property: "og:url", content: "/super-admin/colleges" },
     ],
+    links: [{ rel: "canonical", href: "/super-admin/colleges" }],
   }),
   component: CollegesPage,
 });

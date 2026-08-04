@@ -32,8 +32,12 @@ export const Route = createFileRoute("/_authenticated/admin/dashboard")({
   head: () => ({
     meta: [
       { title: "College Dashboard — FeeSync AI" },
-      { name: "description", content: "Fee collection, pending balances and reminder performance." },
+      { name: "description", content: "Monitor monthly fee collection, pending balances, overdue students and reminder delivery performance for your college." },
+      { property: "og:title", content: "College Dashboard — FeeSync AI" },
+      { property: "og:description", content: "Monthly fee collection, pending balances and reminder delivery performance for your college." },
+      { property: "og:url", content: "/admin/dashboard" },
     ],
+    links: [{ rel: "canonical", href: "/admin/dashboard" }],
   }),
   component: AdminDashboard,
 });
