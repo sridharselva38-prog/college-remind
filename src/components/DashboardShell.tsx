@@ -28,6 +28,8 @@ const NAV: Record<string, NavItem[]> = {
   super_admin: [
     { to: "/super-admin/dashboard", label: "Overview", icon: LayoutDashboard },
     { to: "/super-admin/colleges", label: "Colleges", icon: Building2 },
+    { to: "/admin/students", label: "Students", icon: Users },
+    { to: "/admin/fees", label: "Fee Records", icon: Wallet },
     { to: "/super-admin/accounts", label: "Accounts & Roles", icon: ShieldCheck },
     { to: "/notifications", label: "Notifications", icon: Bell },
   ],
