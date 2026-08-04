@@ -13,8 +13,12 @@ export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
     meta: [
       { title: "Notifications — FeeSync AI" },
-      { name: "description", content: "Fee reminders, due-date alerts and payment confirmations." },
+      { name: "description", content: "Review fee reminders, upcoming due-date alerts and payment confirmations, and mark notifications as read." },
+      { property: "og:title", content: "Notifications — FeeSync AI" },
+      { property: "og:description", content: "Fee reminders, due-date alerts and payment confirmations in one notification center." },
+      { property: "og:url", content: "/notifications" },
     ],
+    links: [{ rel: "canonical", href: "/notifications" }],
   }),
   component: NotificationsPage,
 });

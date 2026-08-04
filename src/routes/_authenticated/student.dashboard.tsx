@@ -14,8 +14,12 @@ export const Route = createFileRoute("/_authenticated/student/dashboard")({
   head: () => ({
     meta: [
       { title: "My Fees — FeeSync AI" },
-      { name: "description", content: "Your fee balance, due dates and reminder history." },
+      { name: "description", content: "View your student fee balance, upcoming due dates, payment link and a complete history of every fee reminder sent to you." },
+      { property: "og:title", content: "My Fees — FeeSync AI" },
+      { property: "og:description", content: "Your fee balance, upcoming due dates and full reminder history in one student dashboard." },
+      { property: "og:url", content: "/student/dashboard" },
     ],
+    links: [{ rel: "canonical", href: "/student/dashboard" }],
   }),
   component: StudentDashboard,
 });

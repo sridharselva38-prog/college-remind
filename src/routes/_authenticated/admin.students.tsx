@@ -35,8 +35,12 @@ export const Route = createFileRoute("/_authenticated/admin/students")({
   head: () => ({
     meta: [
       { title: "Students — FeeSync AI" },
-      { name: "description", content: "Add, edit and search student records for fee reminders." },
+      { name: "description", content: "Add, edit and search student records with departments, contact details and parent numbers used for automated fee reminders." },
+      { property: "og:title", content: "Students — FeeSync AI" },
+      { property: "og:description", content: "Add, edit and search student records used for automated college fee reminders." },
+      { property: "og:url", content: "/admin/students" },
     ],
+    links: [{ rel: "canonical", href: "/admin/students" }],
   }),
   component: StudentsPage,
 });

@@ -19,18 +19,12 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "FeeSync AI — Never Miss a Fee Deadline Again" },
-      {
-        name: "description",
-        content:
-          "Smart college fee reminder bot: track student fee balances and auto-send WhatsApp, email and push reminders to students and parents.",
-      },
+      { name: "description", content: "Smart college fee reminder bot: track student fee balances and auto-send WhatsApp, email and push reminders to students and parents." },
       { property: "og:title", content: "FeeSync AI — Never Miss a Fee Deadline Again" },
-      {
-        property: "og:description",
-        content:
-          "Automate college fee tracking and multilingual WhatsApp, email and push reminders for students and parents.",
-      },
+      { property: "og:description", content: "Automate college fee tracking and multilingual WhatsApp, email and push reminders for students and parents." },
+      { property: "og:url", content: "/" },
     ],
+    links: [{ rel: "canonical", href: "/" }],
   }),
   component: Landing,
 });

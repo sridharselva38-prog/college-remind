@@ -97,7 +97,31 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
-    scripts: [{ children: themeBootstrapScript }],
+    scripts: [
+      { children: themeBootstrapScript },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "FeeSync AI",
+              url: "/",
+              description:
+                "FeeSync AI helps colleges track fee payments and send smart WhatsApp, email and push reminders to students and parents.",
+            },
+            {
+              "@type": "WebSite",
+              name: "FeeSync AI",
+              url: "/",
+              description:
+                "Smart college fee reminder bot for tracking student fee balances and automating multilingual payment reminders.",
+            },
+          ],
+        }),
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

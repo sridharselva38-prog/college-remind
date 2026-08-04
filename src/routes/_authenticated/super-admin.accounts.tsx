@@ -15,8 +15,12 @@ export const Route = createFileRoute("/_authenticated/super-admin/accounts")({
   head: () => ({
     meta: [
       { title: "Accounts & Roles — FeeSync AI" },
-      { name: "description", content: "Assign college admin and student roles to existing accounts." },
+      { name: "description", content: "Assign super admin, college admin and student roles to existing FeeSync AI accounts and scope them to a college." },
+      { property: "og:title", content: "Accounts & Roles — FeeSync AI" },
+      { property: "og:description", content: "Assign college admin and student roles to existing FeeSync AI accounts." },
+      { property: "og:url", content: "/super-admin/accounts" },
     ],
+    links: [{ rel: "canonical", href: "/super-admin/accounts" }],
   }),
   component: AccountsPage,
 });

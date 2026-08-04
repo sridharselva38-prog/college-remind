@@ -11,8 +11,12 @@ export const Route = createFileRoute("/_authenticated/super-admin/dashboard")({
   head: () => ({
     meta: [
       { title: "Platform Overview — FeeSync AI" },
-      { name: "description", content: "Platform-wide colleges, students and collection metrics." },
+      { name: "description", content: "Platform-wide view of colleges, enrolled students, total fee collection and reminder activity across all FeeSync AI tenants." },
+      { property: "og:title", content: "Platform Overview — FeeSync AI" },
+      { property: "og:description", content: "Platform-wide colleges, students, collection metrics and reminder activity." },
+      { property: "og:url", content: "/super-admin/dashboard" },
     ],
+    links: [{ rel: "canonical", href: "/super-admin/dashboard" }],
   }),
   component: SuperDashboard,
 });
