@@ -1,5 +1,5 @@
 import { auth, defineMcp } from "@lovable.dev/mcp-js";
-import type { defineTool } from "@lovable.dev/mcp-js";
+
 
 type AnyTool = Parameters<typeof defineMcp>[0]["tools"][number];
 import listStudents from "./tools/list-students";
