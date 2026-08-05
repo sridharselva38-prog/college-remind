@@ -1,4 +1,4 @@
-import { auth, defineMcp } from "@lovable.dev/mcp-js";
+import { auth, defineMcp, type AnyToolDefinition } from "@lovable.dev/mcp-js";
 import listStudents from "./tools/list-students";
 import listFeeRecords from "./tools/list-fee-records";
 import feeCollectionSummary from "./tools/fee-collection-summary";
