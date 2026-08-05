@@ -1,4 +1,7 @@
-import { auth, defineMcp, type AnyToolDefinition } from "@lovable.dev/mcp-js";
+import { auth, defineMcp } from "@lovable.dev/mcp-js";
+import type { defineTool } from "@lovable.dev/mcp-js";
+
+type AnyTool = Parameters<typeof defineMcp>[0]["tools"][number];
 import listStudents from "./tools/list-students";
 import listFeeRecords from "./tools/list-fee-records";
 import feeCollectionSummary from "./tools/fee-collection-summary";
@@ -19,5 +22,5 @@ export default defineMcp({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
   }),
-  tools: [listStudents, listFeeRecords, feeCollectionSummary, listReminderLogs, recordFeePayment],
+  tools: [listStudents, listFeeRecords, feeCollectionSummary, listReminderLogs, recordFeePayment] as unknown as AnyTool[],
 });
