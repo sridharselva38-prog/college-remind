@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://ejvbxlqzrcdayknqadaw.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "feesync-ai",
+      "version": "0.1.0",
+      "title": "FeeSync AI"
+    },
+    "tools": [
+      {
+        "name": "list_students",
+        "title": "List students",
+        "description": "List students visible to the signed-in FeeSync AI user, optionally filtered by name, register number or department.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": "string",
+              "description": "Match against student name or register number."
+            },
+            "department": {
+              "type": "string",
+              "description": "Exact department name filter."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum rows to return (default 25, max 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_fee_records",
+        "title": "List fee records",
+        "description": "List fee records visible to the signed-in user, with student details. Filter by status or only outstanding/overdue balances.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "partial",
+                "paid",
+                "overdue"
+              ],
+              "description": "Filter by fee status."
+            },
+            "only_outstanding": {
+              "type": "boolean",
+              "description": "Return only records with a balance above zero."
+            },
+            "overdue_only": {
+              "type": "boolean",
+              "description": "Return only records past their due date with a balance."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum rows to return (default 25, max 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "fee_collection_summary",
+        "title": "Fee collection summary",
+        "description": "Summarise total fees, collected amount, pending balance, overdue count and status split for the fee records the signed-in user can see.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "academic_year": {
+              "type": "string",
+              "description": "Restrict the summary to one academic year, e.g. 2024-2025."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_reminder_logs",
+        "title": "List reminder logs",
+        "description": "List recent fee reminder messages (channel, stage, status, sent time) visible to the signed-in user.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "student_id": {
+              "type": "string",
+              "description": "Restrict to one student id."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum rows to return (default 25, max 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "record_fee_payment",
+        "title": "Record fee payment",
+        "description": "Add a payment amount to an existing fee record. The balance and status are recalculated automatically.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "fee_record_id": {
+              "type": "string",
+              "description": "The fee record id to update."
+            },
+            "amount": {
+              "type": "number",
+              "description": "Payment amount in INR to add to the paid total."
+            }
+          },
+          "required": [
+            "fee_record_id",
+            "amount"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
