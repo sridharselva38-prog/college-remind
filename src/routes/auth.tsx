@@ -17,7 +17,14 @@ import { signupSchema } from "@/lib/schemas";
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup"]).optional(),
+  next: z.string().optional(),
 });
+
+/** Only same-origin relative paths may be used as a post-login redirect. */
+function safeNext(next?: string): string | null {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -40,6 +47,7 @@ type FormValues = z.infer<typeof signupSchema>;
 function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
+  const next = safeNext(search.next);
   const [mode, setMode] = useState<"signin" | "signup">(search.mode ?? "signin");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -51,9 +59,11 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/home", replace: true });
+      if (!data.session) return;
+      if (next) window.location.replace(next);
+      else navigate({ to: "/home", replace: true });
     });
-  }, [navigate]);
+  }, [navigate, next]);
 
   async function onSubmit(values: FormValues) {
     setBusy(true);
@@ -63,7 +73,7 @@ function AuthPage() {
           email: values.email,
           password: values.password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: next ? `${window.location.origin}${next}` : window.location.origin,
             data: { full_name: values.full_name },
           },
         });
@@ -76,7 +86,8 @@ function AuthPage() {
           password: values.password,
         });
         if (error) throw error;
-        navigate({ to: "/home", replace: true });
+        if (next) window.location.replace(next);
+        else navigate({ to: "/home", replace: true });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -88,7 +99,7 @@ function AuthPage() {
   async function google() {
     setBusy(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: next ? `${window.location.origin}${next}` : window.location.origin,
     });
     if (result.error) {
       setBusy(false);
@@ -96,7 +107,8 @@ function AuthPage() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/home", replace: true });
+    if (next) window.location.replace(next);
+    else navigate({ to: "/home", replace: true });
   }
 
   async function forgotPassword() {
