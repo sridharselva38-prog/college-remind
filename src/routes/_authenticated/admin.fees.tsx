@@ -39,11 +39,42 @@ const TONE: Record<string, "default" | "secondary" | "destructive" | "outline"> 
 
 function FeesPage() {
   const fetchFees = useServerFn(listFeeRecords);
+  const runReminders = useServerFn(runRemindersNow);
+  const queryClient = useQueryClient();
   const { data, isPending } = useQuery({ queryKey: ["fees"], queryFn: () => fetchFees() });
+
+  const send = useMutation({
+    mutationFn: () => runReminders(),
+    onSuccess: (summary) => {
+      toast.success(
+        `${summary.sent} reminder${summary.sent === 1 ? "" : "s"} sent` +
+          (summary.failed ? `, ${summary.failed} failed` : "") +
+          (summary.sent + summary.failed === 0 ? " — nothing is due today" : ""),
+      );
+      void queryClient.invalidateQueries({ queryKey: ["reminders"] });
+      void queryClient.invalidateQueries({ queryKey: ["me"] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Reminder run failed"),
+  });
 
   return (
     <DashboardShell title="Fee Records" description="Balances and due dates driving the reminder engine">
+      <div className="mb-4 flex justify-end">
+        <Button
+          onClick={() => send.mutate()}
+          disabled={send.isPending}
+          className="gap-2 rounded-xl"
+        >
+          {send.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Send className="size-4" />
+          )}
+          Send reminders now
+        </Button>
+      </div>
       <Card className="rounded-2xl border-border/70 p-4 shadow-soft sm:p-5">
+
         {isPending ? (
           <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
