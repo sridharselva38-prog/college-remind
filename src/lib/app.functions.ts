@@ -28,6 +28,7 @@ export const getMe = createServerFn({ method: "GET" })
     const { supabase, userId, claims } = context;
     const email = (claims as { email?: string }).email ?? null;
     await linkStudentAccount(userId, email);
+    await ensureWorkspaceAccess(userId);
 
     const scope = await getScope(supabase, userId);
     const [{ data: college }, { data: student }, { data: unread }] = await Promise.all([
