@@ -140,3 +140,46 @@ export function nn<T extends Record<string, unknown>>(obj: T): Record<string, un
   }
   return out;
 }
+
+/**
+ * Makes a freshly signed-in account usable: accounts with no college and no
+ * admin role are attached to the first active college as a college admin.
+ * Existing roles and college assignments are never overwritten.
+ */
+export async function ensureWorkspaceAccess(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const [{ data: roleRows }, { data: profile }] = await Promise.all([
+    supabaseAdmin.from("user_roles").select("role").eq("user_id", userId),
+    supabaseAdmin.from("profiles").select("id, college_id").eq("id", userId).maybeSingle(),
+  ]);
+  const roles = (roleRows ?? []).map((r) => r.role);
+  const isPrivileged = roles.includes("super_admin") || roles.includes("college_admin");
+  if (isPrivileged && profile?.college_id) return;
+
+  // A student record linked to this account means the user belongs in the student view.
+  const { data: linkedStudent } = await supabaseAdmin
+    .from("students")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (linkedStudent) return;
+
+  const { data: college } = await supabaseAdmin
+    .from("colleges")
+    .select("id")
+    .eq("is_active", true)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!college) return;
+
+  if (!isPrivileged) {
+    await supabaseAdmin
+      .from("user_roles")
+      .upsert({ user_id: userId, role: "college_admin" }, { onConflict: "user_id,role" });
+  }
+  if (!profile?.college_id) {
+    await supabaseAdmin.from("profiles").update({ college_id: college.id }).eq("id", userId);
+  }
+}
