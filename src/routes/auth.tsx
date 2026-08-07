@@ -27,7 +27,6 @@ function safeNext(next?: string): string | null {
 }
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   validateSearch: searchSchema,
   head: () => ({
     meta: [
