@@ -5,6 +5,7 @@ import {
   primaryRole,
   dashboardPathFor,
   linkStudentAccount,
+  ensureWorkspaceAccess,
   summarizeFees,
   monthlyCollection,
   reminderStats,
