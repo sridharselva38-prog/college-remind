@@ -331,3 +331,28 @@ export const listAuditLogs = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+/** Admin-triggered reminder run for the caller's college. */
+export const runRemindersNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const scope = await getScope(context.supabase, context.userId);
+    if (!scope.isSuper && !scope.isAdmin) throw new Error("Forbidden");
+    const { runReminderCycle } = await import("@/lib/reminders.server");
+    return runReminderCycle({
+      collegeId: scope.isSuper ? null : scope.collegeId,
+      sentBy: context.userId,
+    });
+  });
+
+export const listReminderLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("reminder_logs")
+      .select("*, students(full_name, register_number)")
+      .order("sent_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
