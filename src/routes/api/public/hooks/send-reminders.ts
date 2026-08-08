@@ -8,15 +8,19 @@ export const Route = createFileRoute("/api/public/hooks/send-reminders")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected =
-          process.env["SUPABASE_ANON_KEY"] ?? process.env["SUPABASE_PUBLISHABLE_KEY"];
+        const allowed = [
+          process.env["SUPABASE_ANON_KEY"],
+          process.env["SUPABASE_PUBLISHABLE_KEY"],
+          process.env["VITE_SUPABASE_PUBLISHABLE_KEY"],
+        ].filter((v): v is string => Boolean(v));
         const provided =
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
           "";
-        if (!expected || provided !== expected) {
+        if (allowed.length === 0 || !allowed.includes(provided)) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
+
 
         try {
           const { runReminderCycle } = await import("@/lib/reminders.server");

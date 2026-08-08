@@ -232,6 +232,9 @@ export async function runReminderCycle(opts?: {
       .from("reminder_logs")
       .select("fee_record_id, stage, recipient")
       .eq("college_id", college.id)
+      // Only successful sends block a re-send; failures are retried next run.
+      .in("status", ["sent", "delivered"])
+
       .in(
         "fee_record_id",
         candidates.map((c) => c.id),
