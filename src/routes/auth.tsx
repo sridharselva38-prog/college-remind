@@ -97,8 +97,13 @@ function AuthPage() {
 
   async function google() {
     setBusy(true);
+    // Always return to the public /auth/callback route — never straight into a
+    // protected path, which can 404/bounce before the session is hydrated.
+    const callback = `${window.location.origin}/auth/callback${
+      next ? `?next=${encodeURIComponent(next)}` : ""
+    }`;
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: next ? `${window.location.origin}${next}` : window.location.origin,
+      redirect_uri: callback,
     });
     if (result.error) {
       setBusy(false);
