@@ -1,0 +1,1 @@
+ALTER TYPE public.reminder_channel ADD VALUE IF NOT EXISTS 'sms';

@@ -480,7 +480,7 @@ export type Database = {
       app_role: "super_admin" | "college_admin" | "student"
       fee_status: "pending" | "partial" | "paid" | "overdue"
       recipient_type: "student" | "parent"
-      reminder_channel: "whatsapp" | "email" | "push"
+      reminder_channel: "whatsapp" | "email" | "push" | "sms"
       reminder_stage:
         | "before_15"
         | "before_7"
@@ -619,7 +619,7 @@ export const Constants = {
       app_role: ["super_admin", "college_admin", "student"],
       fee_status: ["pending", "partial", "paid", "overdue"],
       recipient_type: ["student", "parent"],
-      reminder_channel: ["whatsapp", "email", "push"],
+      reminder_channel: ["whatsapp", "email", "push", "sms"],
       reminder_stage: [
         "before_15",
         "before_7",

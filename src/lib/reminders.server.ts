@@ -112,17 +112,24 @@ export type SendResult =
   | { ok: true; providerRef: string | null }
   | { ok: false; error: string };
 
-/** Sends one WhatsApp message through the Twilio connector gateway. */
-export async function sendWhatsApp(
+export type MessageChannel = "sms" | "whatsapp";
+
+/**
+ * Sends one reminder through the Twilio connector gateway. Normal text
+ * messages (SMS) are the default; WhatsApp uses the `whatsapp:` prefix.
+ */
+export async function sendTextMessage(
   from: string,
   to: string,
   body: string,
+  channel: MessageChannel = "sms",
 ): Promise<SendResult> {
   const lovableKey = process.env["LOVABLE_API_KEY"];
   const twilioKey = process.env["TWILIO_API_KEY"];
   if (!lovableKey) return { ok: false, error: "LOVABLE_API_KEY is not configured" };
   if (!twilioKey) return { ok: false, error: "Twilio is not connected yet" };
 
+  const prefix = channel === "whatsapp" ? "whatsapp:" : "";
   try {
     const response = await fetch(`${GATEWAY_URL}/Messages.json`, {
       method: "POST",
@@ -132,14 +139,14 @@ export async function sendWhatsApp(
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        To: `whatsapp:${to}`,
-        From: `whatsapp:${from}`,
+        To: `${prefix}${to}`,
+        From: `${prefix}${from}`,
         Body: body,
       }),
     });
     const text = await response.text();
     if (!response.ok) {
-      console.error(`Twilio WhatsApp send failed [${response.status}]: ${text}`);
+      console.error(`Twilio ${channel} send failed [${response.status}]: ${text}`);
       return { ok: false, error: `Twilio ${response.status}: ${text.slice(0, 300)}` };
     }
     let providerRef: string | null = null;
@@ -276,19 +283,28 @@ export async function runReminderCycle(opts?: {
         });
 
         let result: SendResult;
+        let channel: MessageChannel = "sms";
         if (!target.phone) {
           result = { ok: false, error: `No ${target.recipient} phone number on record` };
         } else if (!from) {
-          result = { ok: false, error: "College has no WhatsApp sender number configured" };
+          result = { ok: false, error: "College has no sender number configured" };
         } else {
-          result = await sendWhatsApp(from, target.phone, body);
+          // Normal text message first; fall back to WhatsApp on the same number.
+          result = await sendTextMessage(from, target.phone, body, "sms");
+          if (!result.ok) {
+            const wa = await sendTextMessage(from, target.phone, body, "whatsapp");
+            if (wa.ok) {
+              result = wa;
+              channel = "whatsapp";
+            }
+          }
         }
 
         await supabaseAdmin.from("reminder_logs").insert({
           college_id: college.id,
           student_id: student.id,
           fee_record_id: fee.id,
-          channel: "whatsapp",
+          channel,
           recipient: target.recipient,
           recipient_value: target.phone,
           stage,
