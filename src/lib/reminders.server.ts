@@ -283,19 +283,28 @@ export async function runReminderCycle(opts?: {
         });
 
         let result: SendResult;
+        let channel: MessageChannel = "sms";
         if (!target.phone) {
           result = { ok: false, error: `No ${target.recipient} phone number on record` };
         } else if (!from) {
-          result = { ok: false, error: "College has no WhatsApp sender number configured" };
+          result = { ok: false, error: "College has no sender number configured" };
         } else {
-          result = await sendWhatsApp(from, target.phone, body);
+          // Normal text message first; fall back to WhatsApp on the same number.
+          result = await sendTextMessage(from, target.phone, body, "sms");
+          if (!result.ok) {
+            const wa = await sendTextMessage(from, target.phone, body, "whatsapp");
+            if (wa.ok) {
+              result = wa;
+              channel = "whatsapp";
+            }
+          }
         }
 
         await supabaseAdmin.from("reminder_logs").insert({
           college_id: college.id,
           student_id: student.id,
           fee_record_id: fee.id,
-          channel: "whatsapp",
+          channel,
           recipient: target.recipient,
           recipient_value: target.phone,
           stage,
