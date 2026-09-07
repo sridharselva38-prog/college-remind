@@ -345,6 +345,26 @@ export const runRemindersNow = createServerFn({ method: "POST" })
     });
   });
 
+/** Sends a reminder for a single fee record right away. */
+export const sendReminderForFee = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { fee_record_id: string }) => data)
+  .handler(async ({ context, data }) => {
+    const scope = await getScope(context.supabase, context.userId);
+    if (!scope.isSuper && !scope.isAdmin) throw new Error("Forbidden");
+    const { data: fee, error } = await context.supabase
+      .from("fee_records")
+      .select("id")
+      .eq("id", data.fee_record_id)
+      .single();
+    if (error || !fee) throw new Error("Fee record not found");
+    const { sendReminderForFeeRecord } = await import("@/lib/reminders.server");
+    return sendReminderForFeeRecord({
+      feeRecordId: data.fee_record_id,
+      sentBy: context.userId,
+    });
+  });
+
 export const listReminderLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

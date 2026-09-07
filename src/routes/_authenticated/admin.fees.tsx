@@ -1,14 +1,24 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Send } from "lucide-react";
+import { useForm, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { BellRing, Loader2, Pencil, Send } from "lucide-react";
 import { toast } from "sonner";
-import { listFeeRecords, runRemindersNow } from "@/lib/app.functions";
+import {
+  listFeeRecords,
+  runRemindersNow,
+  saveFeeRecord,
+  sendReminderForFee,
+} from "@/lib/app.functions";
+import { feeSchema, type FeeInput } from "@/lib/schemas";
 import { DashboardShell } from "@/components/DashboardShell";
 import { inr } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -19,6 +29,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/fees")({
   head: () => ({
@@ -41,11 +58,22 @@ const TONE: Record<string, "default" | "secondary" | "destructive" | "outline"> 
   pending: "outline",
 };
 
+type Row = Awaited<ReturnType<typeof listFeeRecords>>[number];
+
 function FeesPage() {
   const fetchFees = useServerFn(listFeeRecords);
   const runReminders = useServerFn(runRemindersNow);
+  const saveFee = useServerFn(saveFeeRecord);
+  const sendOne = useServerFn(sendReminderForFee);
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery({ queryKey: ["fees"], queryFn: () => fetchFees() });
+
+  const [open, setOpen] = useState(false);
+  const [editingName, setEditingName] = useState("");
+
+  const form = useForm<FeeInput>({
+    resolver: zodResolver(feeSchema) as unknown as Resolver<FeeInput>,
+  });
 
   const send = useMutation({
     mutationFn: () => runReminders(),
@@ -60,6 +88,49 @@ function FeesPage() {
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Reminder run failed"),
   });
+
+  const sendRow = useMutation({
+    mutationFn: (id: string) => sendOne({ data: { fee_record_id: id } }),
+    onSuccess: (result) => {
+      if (result.sent > 0) {
+        toast.success(`Reminder sent (${result.sent} message${result.sent === 1 ? "" : "s"})`);
+      } else {
+        toast.error(result.errors[0] ?? "No phone number on record for this student");
+      }
+      void queryClient.invalidateQueries({ queryKey: ["reminders"] });
+      void queryClient.invalidateQueries({ queryKey: ["me"] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not send reminder"),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: (values: FeeInput) => saveFee({ data: values }),
+    onSuccess: () => {
+      toast.success("Fee record updated");
+      setOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ["fees"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not save"),
+  });
+
+  function edit(row: Row) {
+    form.reset({
+      id: row.id,
+      student_id: row.student_id,
+      academic_year: row.academic_year ?? "",
+      term: row.term ?? "",
+      total_fee: Number(row.total_fee ?? 0),
+      paid_fee: Number(row.paid_fee ?? 0),
+      scholarship: Number(row.scholarship ?? 0),
+      discount: Number(row.discount ?? 0),
+      late_fee: Number(row.late_fee ?? 0),
+      due_date: row.due_date,
+      notes: row.notes ?? "",
+    });
+    setEditingName(row.students?.full_name ?? "student");
+    setOpen(true);
+  }
 
   return (
     <DashboardShell title="Fee Records" description="Balances and due dates driving the reminder engine">
@@ -101,6 +172,7 @@ function FeesPage() {
                   <TableHead>Balance</TableHead>
                   <TableHead>Due date</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -122,6 +194,31 @@ function FeesPage() {
                         {row.status}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Send reminder to this student"
+                        title="Send reminder to this student"
+                        disabled={sendRow.isPending && sendRow.variables === row.id}
+                        onClick={() => sendRow.mutate(row.id)}
+                      >
+                        {sendRow.isPending && sendRow.variables === row.id ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <BellRing className="size-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Edit fee record"
+                        title="Edit fee record"
+                        onClick={() => edit(row)}
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -129,6 +226,73 @@ function FeesPage() {
           </div>
         )}
       </Card>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit fee record — {editingName}</DialogTitle>
+          </DialogHeader>
+          <form
+            id="fee-form"
+            onSubmit={form.handleSubmit((v) => saveMutation.mutate(v))}
+            className="grid gap-4 sm:grid-cols-2"
+          >
+            <Field label="Academic year">
+              <Input {...form.register("academic_year")} placeholder="2025-26" />
+            </Field>
+            <Field label="Term">
+              <Input {...form.register("term")} placeholder="Semester 1" />
+            </Field>
+            <Field label="Total fee" error={form.formState.errors.total_fee?.message}>
+              <Input type="number" step="1" {...form.register("total_fee")} />
+            </Field>
+            <Field label="Paid fee" error={form.formState.errors.paid_fee?.message}>
+              <Input type="number" step="1" {...form.register("paid_fee")} />
+            </Field>
+            <Field label="Scholarship">
+              <Input type="number" step="1" {...form.register("scholarship")} />
+            </Field>
+            <Field label="Discount">
+              <Input type="number" step="1" {...form.register("discount")} />
+            </Field>
+            <Field label="Late fee">
+              <Input type="number" step="1" {...form.register("late_fee")} />
+            </Field>
+            <Field label="Due date" error={form.formState.errors.due_date?.message}>
+              <Input type="date" {...form.register("due_date")} />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Notes">
+                <Input {...form.register("notes")} />
+              </Field>
+            </div>
+          </form>
+          <DialogFooter>
+            <Button type="submit" form="fee-form" disabled={saveMutation.isPending} className="gap-2">
+              {saveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardShell>
+  );
+}
+
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string | undefined;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{label}</Label>
+      {children}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+    </div>
   );
 }
