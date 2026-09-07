@@ -358,3 +358,124 @@ export async function runReminderCycle(opts?: {
 
   return summary;
 }
+
+/** Picks the closest ladder stage for an arbitrary due date. */
+export function stageForDueDate(dueDate: string, today = new Date()): Stage {
+  const days = Math.round(
+    (new Date(`${dueDate}T00:00:00Z`).getTime() - new Date(iso(today) + "T00:00:00Z").getTime()) /
+      86_400_000,
+  );
+  let best = LADDER[0]!;
+  for (const item of LADDER) {
+    if (Math.abs(item.offset - days) < Math.abs(best.offset - days)) best = item;
+  }
+  return best.stage;
+}
+
+export type SingleSendSummary = {
+  sent: number;
+  failed: number;
+  errors: string[];
+};
+
+/** Sends a reminder for ONE fee record immediately, to student and parent. */
+export async function sendReminderForFeeRecord(opts: {
+  feeRecordId: string;
+  sentBy?: string | null;
+}): Promise<SingleSendSummary> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { data: fee, error } = await supabaseAdmin
+    .from("fee_records")
+    .select(
+      "id, student_id, college_id, balance_fee, due_date, students(id, full_name, register_number, student_phone, parent_phone, user_id, is_active)",
+    )
+    .eq("id", opts.feeRecordId)
+    .single();
+  if (error) throw new Error(error.message);
+
+  const record = fee as unknown as FeeCandidate;
+  const student = record.students;
+  if (!student) throw new Error("Student not found for this fee record");
+
+  const { data: college, error: cErr } = await supabaseAdmin
+    .from("colleges")
+    .select("id, name, whatsapp_number, phone, payment_link, support_contact, reminder_language")
+    .eq("id", record.college_id)
+    .single();
+  if (cErr) throw new Error(cErr.message);
+
+  const from = toE164(college.whatsapp_number ?? college.phone);
+  const stage = stageForDueDate(record.due_date);
+  const balance = Number(record.balance_fee ?? 0);
+  const summary: SingleSendSummary = { sent: 0, failed: 0, errors: [] };
+
+  const targets: { recipient: Recipient; phone: string | null }[] = [
+    { recipient: "student", phone: toE164(student.student_phone) },
+    { recipient: "parent", phone: toE164(student.parent_phone) },
+  ];
+
+  for (const target of targets) {
+    if (!target.phone) continue;
+    const body = buildMessage({
+      collegeName: college.name,
+      studentName: student.full_name,
+      registerNumber: student.register_number,
+      balance,
+      dueDate: record.due_date,
+      stage,
+      recipient: target.recipient,
+      paymentLink: college.payment_link,
+      supportContact: college.support_contact,
+      language: college.reminder_language,
+    });
+
+    let channel: MessageChannel = "sms";
+    let result: SendResult;
+    if (!from) {
+      result = { ok: false, error: "College has no sender number configured" };
+    } else {
+      result = await sendTextMessage(from, target.phone, body, "sms");
+      if (!result.ok) {
+        const wa = await sendTextMessage(from, target.phone, body, "whatsapp");
+        if (wa.ok) {
+          result = wa;
+          channel = "whatsapp";
+        }
+      }
+    }
+
+    await supabaseAdmin.from("reminder_logs").insert({
+      college_id: college.id,
+      student_id: student.id,
+      fee_record_id: record.id,
+      channel,
+      recipient: target.recipient,
+      recipient_value: target.phone,
+      stage,
+      status: result.ok ? "sent" : "failed",
+      message_body: body,
+      provider_ref: result.ok ? result.providerRef : null,
+      error_message: result.ok ? null : result.error,
+      sent_by: opts.sentBy ?? null,
+    });
+
+    if (result.ok) summary.sent += 1;
+    else {
+      summary.failed += 1;
+      summary.errors.push(result.error);
+    }
+  }
+
+  if (student.user_id) {
+    await supabaseAdmin.from("notifications").insert({
+      user_id: student.user_id,
+      college_id: college.id,
+      title: `Fee ${STAGE_LABEL[stage]}`,
+      body: `Outstanding balance ${money(balance)} for ${record.due_date}.`,
+      type: stage.startsWith("after") ? "danger" : "warning",
+    });
+  }
+
+  return summary;
+}
