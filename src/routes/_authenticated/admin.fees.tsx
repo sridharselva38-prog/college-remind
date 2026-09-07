@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BellRing, Loader2, Pencil, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -72,7 +72,7 @@ function FeesPage() {
   const [editingName, setEditingName] = useState("");
 
   const form = useForm<FeeInput>({
-    resolver: zodResolver(feeSchema),
+    resolver: zodResolver(feeSchema) as unknown as Resolver<FeeInput>,
   });
 
   const send = useMutation({
