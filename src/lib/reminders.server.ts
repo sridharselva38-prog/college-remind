@@ -200,7 +200,10 @@ export async function sendTextMessage(
     return { ok: true, providerRef };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Network error" };
+  }
 }
+
+
 
 /**
  * Delivers one reminder with automatic fallbacks:
