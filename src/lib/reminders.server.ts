@@ -352,6 +352,22 @@ export async function runReminderCycle(opts?: {
           type: stage.startsWith("after") ? "danger" : "warning",
         });
         summary.notifications += 1;
+      } else {
+        // No linked student account: notify college staff so the reminder is never lost.
+        const { data: staff } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .eq("college_id", college.id);
+        for (const person of staff ?? []) {
+          await supabaseAdmin.from("notifications").insert({
+            user_id: person.id,
+            college_id: college.id,
+            title: `${student.full_name} — fee ${STAGE_LABEL[stage]}`,
+            body: `${student.register_number}: outstanding ${money(balance)}, due ${fee.due_date}.`,
+            type: stage.startsWith("after") ? "danger" : "warning",
+          });
+          summary.notifications += 1;
+        }
       }
     }
 
