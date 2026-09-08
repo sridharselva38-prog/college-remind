@@ -95,9 +95,12 @@ function FeesPage() {
       if (result.sent > 0) {
         toast.success(`Reminder sent (${result.sent} message${result.sent === 1 ? "" : "s"})`);
       } else {
-        toast.error(result.errors[0] ?? "No phone number on record for this student");
+        toast.warning(
+          `${result.errors[0] ?? "No phone number on record"} — reminder saved in Notifications instead`,
+        );
       }
       void queryClient.invalidateQueries({ queryKey: ["reminders"] });
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
       void queryClient.invalidateQueries({ queryKey: ["me"] });
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Could not send reminder"),
