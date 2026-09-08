@@ -108,27 +108,50 @@ export function toE164(raw: string | null | undefined): string | null {
   return `+${digits}`;
 }
 
+/** Twilio error codes that mean "trial account can only send predefined templates". */
+const TRIAL_TEMPLATE_CODES = ["572002", "572001", "21656"];
+
+export function twilioErrorCode(body: string): string {
+  return /"code"\s*:\s*(\d+)/.exec(body)?.[1] ?? "";
+}
+
+export function isTrialTemplateError(body: string): boolean {
+  if (TRIAL_TEMPLATE_CODES.includes(twilioErrorCode(body))) return true;
+  return /predefined|template/i.test(body);
+}
+
 /** Turns raw Twilio error bodies into a short, human-readable reason. */
 export function friendlyTwilioError(status: number, body: string): string {
-  const code = /"code"\s*:\s*(\d+)/.exec(body)?.[1] ?? "";
-  if (["572002", "21608", "21211", "21610", "63007", "21612"].includes(code)) {
-    const map: Record<string, string> = {
-      "572002": "Twilio trial account: this number is not a verified recipient yet",
-      "21608": "Twilio trial account: verify this number in Twilio first",
-      "21211": "Phone number is not a valid mobile number",
-      "21610": "Recipient has unsubscribed from messages",
-      "63007": "Sender number is not enabled for this channel",
-      "21612": "Sender number cannot deliver to this country",
-    };
-    return map[code]!;
-  }
+  const code = twilioErrorCode(body);
+  const map: Record<string, string> = {
+    "572002": "Twilio trial account allows only predefined SMS templates",
+    "572001": "Twilio trial account allows only predefined SMS templates",
+    "21656": "Twilio trial account allows only predefined SMS templates",
+    "21608": "Twilio trial account: verify this number in Twilio first",
+    "21211": "Phone number is not a valid mobile number",
+    "21610": "Recipient has unsubscribed from messages",
+    "63007": "Sender number is not enabled for this channel",
+    "21612": "Sender number cannot deliver to this country",
+  };
+  if (map[code]) return map[code]!;
   const message = /"message"\s*:\s*"([^"]{0,200})"/.exec(body)?.[1];
   return message ? `Twilio: ${message}` : `Twilio ${status}: ${body.slice(0, 200)}`;
 }
 
+/**
+ * Trial-account safe body. Twilio free trials accept only their predefined
+ * templates, so we use the "appointment" template shape and carry the fee
+ * details in the date/time slots.
+ */
+export function buildTrialTemplateMessage(c: MessageContext): string {
+  return `Your ${c.collegeName} appointment is coming up on ${c.dueDate} at 10:00 AM`;
+}
+
+
 export type SendResult =
   | { ok: true; providerRef: string | null }
-  | { ok: false; error: string };
+  | { ok: false; error: string; raw?: string };
+
 
 export type MessageChannel = "sms" | "whatsapp";
 
@@ -165,8 +188,9 @@ export async function sendTextMessage(
     const text = await response.text();
     if (!response.ok) {
       console.error(`Twilio ${channel} send failed [${response.status}]: ${text}`);
-      return { ok: false, error: friendlyTwilioError(response.status, text) };
+      return { ok: false, error: friendlyTwilioError(response.status, text), raw: text };
     }
+
     let providerRef: string | null = null;
     try {
       providerRef = (JSON.parse(text) as { sid?: string }).sid ?? null;
@@ -178,6 +202,36 @@ export async function sendTextMessage(
     return { ok: false, error: err instanceof Error ? err.message : "Network error" };
   }
 }
+
+
+
+/**
+ * Delivers one reminder with automatic fallbacks:
+ * 1. full SMS text
+ * 2. trial-account predefined template over SMS (when Twilio rejects custom text)
+ * 3. full text over WhatsApp
+ */
+export async function deliverReminder(
+  from: string,
+  to: string,
+  fullBody: string,
+  trialBody: string,
+): Promise<{ result: SendResult; channel: MessageChannel; body: string }> {
+  const sms = await sendTextMessage(from, to, fullBody, "sms");
+  if (sms.ok) return { result: sms, channel: "sms", body: fullBody };
+
+  if (sms.raw && isTrialTemplateError(sms.raw) && trialBody !== fullBody) {
+    const templated = await sendTextMessage(from, to, trialBody, "sms");
+    if (templated.ok) return { result: templated, channel: "sms", body: trialBody };
+  }
+
+  const wa = await sendTextMessage(from, to, fullBody, "whatsapp");
+  if (wa.ok) return { result: wa, channel: "whatsapp", body: fullBody };
+
+  return { result: sms, channel: "sms", body: fullBody };
+}
+
+
 
 export type RunSummary = {
   colleges: number;
@@ -287,7 +341,7 @@ export async function runReminderCycle(opts?: {
           continue;
         }
 
-        const body = buildMessage({
+        const ctx: MessageContext = {
           collegeName: college.name,
           studentName: student.full_name,
           registerNumber: student.register_number,
@@ -298,7 +352,9 @@ export async function runReminderCycle(opts?: {
           paymentLink: college.payment_link,
           supportContact: college.support_contact,
           language: college.reminder_language,
-        });
+        };
+        const body = buildMessage(ctx);
+        let sentBody = body;
 
         let result: SendResult;
         let channel: MessageChannel = "sms";
@@ -307,15 +363,15 @@ export async function runReminderCycle(opts?: {
         } else if (!from) {
           result = { ok: false, error: "College has no sender number configured" };
         } else {
-          // Normal text message first; fall back to WhatsApp on the same number.
-          result = await sendTextMessage(from, target.phone, body, "sms");
-          if (!result.ok) {
-            const wa = await sendTextMessage(from, target.phone, body, "whatsapp");
-            if (wa.ok) {
-              result = wa;
-              channel = "whatsapp";
-            }
-          }
+          const delivery = await deliverReminder(
+            from,
+            target.phone,
+            body,
+            buildTrialTemplateMessage(ctx),
+          );
+          result = delivery.result;
+          channel = delivery.channel;
+          sentBody = delivery.body;
         }
 
         await supabaseAdmin.from("reminder_logs").insert({
@@ -327,7 +383,8 @@ export async function runReminderCycle(opts?: {
           recipient_value: target.phone,
           stage,
           status: result.ok ? "sent" : "failed",
-          message_body: body,
+          message_body: sentBody,
+
           provider_ref: result.ok ? result.providerRef : null,
           error_message: result.ok ? null : result.error,
           sent_by: opts?.sentBy ?? null,
