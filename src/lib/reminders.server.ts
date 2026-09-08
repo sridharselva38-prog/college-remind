@@ -232,7 +232,6 @@ export async function deliverReminder(
 }
 
 
-}
 
 export type RunSummary = {
   colleges: number;
