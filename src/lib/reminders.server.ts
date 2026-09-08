@@ -501,14 +501,31 @@ export async function sendReminderForFeeRecord(opts: {
     }
   }
 
+  const noteType = stage.startsWith("after") ? "danger" : "warning";
   if (student.user_id) {
     await supabaseAdmin.from("notifications").insert({
       user_id: student.user_id,
       college_id: college.id,
       title: `Fee ${STAGE_LABEL[stage]}`,
       body: `Outstanding balance ${money(balance)} for ${record.due_date}.`,
-      type: stage.startsWith("after") ? "danger" : "warning",
+      type: noteType,
     });
+  } else {
+    const { data: staff } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("college_id", college.id);
+    for (const person of staff ?? []) {
+      await supabaseAdmin.from("notifications").insert({
+        user_id: person.id,
+        college_id: college.id,
+        title: `${student.full_name} — fee ${STAGE_LABEL[stage]}`,
+        body: `${student.register_number}: outstanding ${money(balance)}, due ${record.due_date}.${
+          summary.failed > 0 ? ` SMS failed: ${summary.errors[0] ?? "unknown error"}` : ""
+        }`,
+        type: noteType,
+      });
+    }
   }
 
   return summary;
