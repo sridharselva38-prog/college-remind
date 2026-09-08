@@ -200,7 +200,35 @@ export async function sendTextMessage(
     return { ok: true, providerRef };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Network error" };
+}
+
+/**
+ * Delivers one reminder with automatic fallbacks:
+ * 1. full SMS text
+ * 2. trial-account predefined template over SMS (when Twilio rejects custom text)
+ * 3. full text over WhatsApp
+ */
+export async function deliverReminder(
+  from: string,
+  to: string,
+  fullBody: string,
+  trialBody: string,
+): Promise<{ result: SendResult; channel: MessageChannel; body: string }> {
+  const sms = await sendTextMessage(from, to, fullBody, "sms");
+  if (sms.ok) return { result: sms, channel: "sms", body: fullBody };
+
+  if (sms.raw && isTrialTemplateError(sms.raw) && trialBody !== fullBody) {
+    const templated = await sendTextMessage(from, to, trialBody, "sms");
+    if (templated.ok) return { result: templated, channel: "sms", body: trialBody };
   }
+
+  const wa = await sendTextMessage(from, to, fullBody, "whatsapp");
+  if (wa.ok) return { result: wa, channel: "whatsapp", body: fullBody };
+
+  return { result: sms, channel: "sms", body: fullBody };
+}
+
+
 }
 
 export type RunSummary = {
