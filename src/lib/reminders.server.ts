@@ -108,23 +108,45 @@ export function toE164(raw: string | null | undefined): string | null {
   return `+${digits}`;
 }
 
+/** Twilio error codes that mean "trial account can only send predefined templates". */
+const TRIAL_TEMPLATE_CODES = ["572002", "572001", "21656"];
+
+export function twilioErrorCode(body: string): string {
+  return /"code"\s*:\s*(\d+)/.exec(body)?.[1] ?? "";
+}
+
+export function isTrialTemplateError(body: string): boolean {
+  if (TRIAL_TEMPLATE_CODES.includes(twilioErrorCode(body))) return true;
+  return /predefined|template/i.test(body);
+}
+
 /** Turns raw Twilio error bodies into a short, human-readable reason. */
 export function friendlyTwilioError(status: number, body: string): string {
-  const code = /"code"\s*:\s*(\d+)/.exec(body)?.[1] ?? "";
-  if (["572002", "21608", "21211", "21610", "63007", "21612"].includes(code)) {
-    const map: Record<string, string> = {
-      "572002": "Twilio trial account: this number is not a verified recipient yet",
-      "21608": "Twilio trial account: verify this number in Twilio first",
-      "21211": "Phone number is not a valid mobile number",
-      "21610": "Recipient has unsubscribed from messages",
-      "63007": "Sender number is not enabled for this channel",
-      "21612": "Sender number cannot deliver to this country",
-    };
-    return map[code]!;
-  }
+  const code = twilioErrorCode(body);
+  const map: Record<string, string> = {
+    "572002": "Twilio trial account allows only predefined SMS templates",
+    "572001": "Twilio trial account allows only predefined SMS templates",
+    "21656": "Twilio trial account allows only predefined SMS templates",
+    "21608": "Twilio trial account: verify this number in Twilio first",
+    "21211": "Phone number is not a valid mobile number",
+    "21610": "Recipient has unsubscribed from messages",
+    "63007": "Sender number is not enabled for this channel",
+    "21612": "Sender number cannot deliver to this country",
+  };
+  if (map[code]) return map[code]!;
   const message = /"message"\s*:\s*"([^"]{0,200})"/.exec(body)?.[1];
   return message ? `Twilio: ${message}` : `Twilio ${status}: ${body.slice(0, 200)}`;
 }
+
+/**
+ * Trial-account safe body. Twilio free trials accept only their predefined
+ * templates, so we use the "appointment" template shape and carry the fee
+ * details in the date/time slots.
+ */
+export function buildTrialTemplateMessage(c: MessageContext): string {
+  return `Your ${c.collegeName} appointment is coming up on ${c.dueDate} at 10:00 AM`;
+}
+
 
 export type SendResult =
   | { ok: true; providerRef: string | null }
