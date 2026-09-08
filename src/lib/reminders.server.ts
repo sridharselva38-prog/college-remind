@@ -188,8 +188,9 @@ export async function sendTextMessage(
     const text = await response.text();
     if (!response.ok) {
       console.error(`Twilio ${channel} send failed [${response.status}]: ${text}`);
-      return { ok: false, error: friendlyTwilioError(response.status, text) };
+      return { ok: false, error: friendlyTwilioError(response.status, text), raw: text };
     }
+
     let providerRef: string | null = null;
     try {
       providerRef = (JSON.parse(text) as { sid?: string }).sid ?? null;
