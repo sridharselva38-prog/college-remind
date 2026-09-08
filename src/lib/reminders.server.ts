@@ -150,7 +150,8 @@ export function buildTrialTemplateMessage(c: MessageContext): string {
 
 export type SendResult =
   | { ok: true; providerRef: string | null }
-  | { ok: false; error: string };
+  | { ok: false; error: string; raw?: string };
+
 
 export type MessageChannel = "sms" | "whatsapp";
 
