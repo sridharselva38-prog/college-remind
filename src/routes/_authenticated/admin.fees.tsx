@@ -84,6 +84,7 @@ function FeesPage() {
           (summary.sent + summary.failed === 0 ? " — nothing is due today" : ""),
       );
       void queryClient.invalidateQueries({ queryKey: ["reminders"] });
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
       void queryClient.invalidateQueries({ queryKey: ["me"] });
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Reminder run failed"),
