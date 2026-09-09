@@ -508,7 +508,7 @@ export async function sendReminderForFeeRecord(opts: {
 
   for (const target of targets) {
     if (!target.phone) continue;
-    const body = buildMessage({
+    const ctx: MessageContext = {
       collegeName: college.name,
       studentName: student.full_name,
       registerNumber: student.register_number,
@@ -519,21 +519,24 @@ export async function sendReminderForFeeRecord(opts: {
       paymentLink: college.payment_link,
       supportContact: college.support_contact,
       language: college.reminder_language,
-    });
+    };
+    const body = buildMessage(ctx);
+    let sentBody = body;
 
     let channel: MessageChannel = "sms";
     let result: SendResult;
     if (!from) {
       result = { ok: false, error: "College has no sender number configured" };
     } else {
-      result = await sendTextMessage(from, target.phone, body, "sms");
-      if (!result.ok) {
-        const wa = await sendTextMessage(from, target.phone, body, "whatsapp");
-        if (wa.ok) {
-          result = wa;
-          channel = "whatsapp";
-        }
-      }
+      const delivery = await deliverReminder(
+        from,
+        target.phone,
+        body,
+        buildTrialTemplateMessage(ctx),
+      );
+      result = delivery.result;
+      channel = delivery.channel;
+      sentBody = delivery.body;
     }
 
     await supabaseAdmin.from("reminder_logs").insert({
@@ -545,7 +548,8 @@ export async function sendReminderForFeeRecord(opts: {
       recipient_value: target.phone,
       stage,
       status: result.ok ? "sent" : "failed",
-      message_body: body,
+      message_body: sentBody,
+
       provider_ref: result.ok ? result.providerRef : null,
       error_message: result.ok ? null : result.error,
       sent_by: opts.sentBy ?? null,
