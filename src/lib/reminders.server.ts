@@ -210,6 +210,9 @@ export async function sendTextMessage(
  * 1. full SMS text
  * 2. trial-account predefined template over SMS (when Twilio rejects custom text)
  * 3. full text over WhatsApp
+ *
+ * Set `TWILIO_SKIP_TRIAL_FALLBACK=true` to stop trying the predefined template
+ * after you upgrade your Twilio account out of trial.
  */
 export async function deliverReminder(
   from: string,
@@ -217,10 +220,12 @@ export async function deliverReminder(
   fullBody: string,
   trialBody: string,
 ): Promise<{ result: SendResult; channel: MessageChannel; body: string }> {
+  const skipTrialFallback = process.env["TWILIO_SKIP_TRIAL_FALLBACK"] === "true";
+
   const sms = await sendTextMessage(from, to, fullBody, "sms");
   if (sms.ok) return { result: sms, channel: "sms", body: fullBody };
 
-  if (sms.raw && isTrialTemplateError(sms.raw) && trialBody !== fullBody) {
+  if (!skipTrialFallback && sms.raw && isTrialTemplateError(sms.raw) && trialBody !== fullBody) {
     const templated = await sendTextMessage(from, to, trialBody, "sms");
     if (templated.ok) return { result: templated, channel: "sms", body: trialBody };
   }
